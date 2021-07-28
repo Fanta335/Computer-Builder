@@ -1,0 +1,296 @@
+const config = {
+  url: "https://api.recursionist.io/builder/computers",
+  parent: document.getElementById("parent"),
+};
+
+class PC {
+  constructor(cpu, gpu, ram, storage) {
+    this.cpu = cpu;
+    this.gpu = gpu;
+    this.ram = ram;
+    this.storage = storage;
+  }
+}
+
+class View {
+  static createInitialForm() {
+    let container = document.createElement("div");
+    container.classList.add("min-vh-100", "bg-success");
+
+    container.innerHTML = `
+    <div class="min-vh-100 bg-success">
+      <div class="d-flex flex-wrap justify-content-center">
+        <div class="bg-dark col-12 py-3">
+          <h1 class="text-white text-center">Build Your Own PC</h1>
+        </div>
+        <div class="cpu-form col-12 p-3 d-flex flex-wrap">
+
+        </div>
+        <div class="gpu-form col-12 p-3 d-flex flex-wrap">
+
+        </div>
+        <div class="ram-form col-12 p-3 d-flex flex-wrap">
+
+        </div>
+        <div class="storage-form col-12 p-3 d-flex flex-wrap">
+
+        </div>
+        <div class="col-12 d-flex justify-content-center">
+          <button class="evaluateBtn col-3 btn btn-primary">ADD PC</button>
+        </div>
+        <div class="pc-specs col-12">
+
+        </div>
+      </div>
+    </div>
+    `;
+
+    container.querySelectorAll(".cpu-form")[0].append(View.createCpuForm());
+    container.querySelectorAll(".gpu-form")[0].append(View.createGpuForm());
+    container.querySelectorAll(".ram-form")[0].append(View.createRamForm());
+    container.querySelectorAll(".storage-form")[0].append(View.createStorageForm());
+    container.querySelectorAll(".evaluateBtn")[0].addEventListener("click", function () {
+      container.querySelectorAll(".pc-specs")[0].append(View.createPcSpecsTable());
+    });
+
+    return container;
+  }
+
+  static createCpuForm(data) {
+    let container = document.createElement("div");
+    container.classList.add("col-lg-6", "col-12");
+    container.innerHTML = `
+    <h4>Step1: Select your CPU</h4>
+    <form>
+      <div class="row">
+        <div class="form-group col-6 row align-items-center justify-content-start">
+          <label class="w-auto pl-3 col-form-label" for="cpuBrand">Brand</label>
+          <div class="col-sm">
+            <select class="form-control" id="cpuBrand">
+              <option selected>Choose...</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group col-6 row align-items-center justify-content-start">
+          <label class="w-auto pl-3 col-form-label" for="cpuModel">Model</label>
+          <div class="col-sm">
+            <select class="form-control" name="" id="cpuModel">
+              <option selected>-</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </form>
+    `;
+
+    // container.querySelectorAll("#cpuBrand")[0].innerHTML += View.createOptions(pc.cpu.brand);
+    // container.querySelectorAll("#cpuBrand")[0].innerHTML += `<option value="1">1</option>`;
+
+    return container;
+  }
+
+  static createGpuForm() {
+    let container = document.createElement("div");
+    container.classList.add("col-lg-6", "col-12");
+    container.innerHTML = `
+    <h4>Step2: Select your GPU</h4>
+    <form>
+      <div class="row">
+        <div class="form-group col-6 row align-items-center justify-content-start">
+          <label class="w-auto pl-3 col-form-label" for="gpuBrand">Brand</label>
+          <div class="col-sm">
+            <select class="form-control" name="" id="gpuBrand">
+              <option selected>Choose...</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group col-6 row align-items-center justify-content-start">
+          <label class="w-auto pl-3 col-form-label" for="gpuModel">Model</label>
+          <div class="col-sm">
+            <select class="form-control" name="" id="gpuModel">
+              <option selected>-</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </form>
+    `;
+
+    return container;
+  }
+
+  static createRamForm() {
+    let container = document.createElement("div");
+    container.classList.add("col-lg-8", "col-12");
+    container.innerHTML = `
+    <h4>Step3: Select your memory card</h4>
+    <form>
+      <div class="row">
+        <div class="form-group col-4 row align-items-center justify-content-start">
+          <label class="w-auto pl-3 col-form-label" for="numOfRam">How many?</label>
+          <div class="col-sm">
+            <select class="form-control" name="" id="numOfRam">
+              <option selected>Choose...</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group col-4 row align-items-center justify-content-start">
+          <label class="w-auto pl-3 col-form-label" for="ramBrand">Brand</label>
+          <div class="col-sm">
+            <select class="form-control" name="" id="ramBrand">
+              <option selected>-</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group col-4 row align-items-center justify-content-start">
+          <label class="w-auto pl-3 col-form-label" for="ramModel">Model</label>
+          <div class="col-sm">
+            <select class="form-control" name="" id="ramModel">
+              <option selected>-</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </form>
+    `;
+
+    return container;
+  }
+
+  static createStorageForm() {
+    let container = document.createElement("div");
+    container.classList.add("col-12");
+    container.innerHTML = `
+    <h4>Step4: Select your storage</h4>
+    <form>
+      <div class="row">
+        <div class="form-group col-lg-3 col-6 row align-items-center justify-content-start">
+          <label class="w-auto pl-3 col-form-label" for="storageType">HDD or SSD</label>
+          <div class="col-sm">
+            <select class="form-control" name="" id="storageType">
+              <option selected>Choose...</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group col-lg-3 col-6 row align-items-center justify-content-start">
+          <label class="w-auto pl-3 col-form-label" for="storageVol">Storage</label>
+          <div class="col-sm">
+            <select class="form-control" name="" id="storageVol">
+              <option selected>-</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group col-lg-3 col-6 row align-items-center justify-content-start">
+          <label class="w-auto pl-3 col-form-label" for="storageBrand">Brand</label>
+          <div class="col-sm">
+            <select class="form-control" name="" id="storageBrand">
+              <option selected>-</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group col-lg-3 col-6 row align-items-center justify-content-start">
+          <label class="w-auto pl-3 col-form-label" for="storageModel">Model</label>
+          <div class="col-sm">
+            <select class="form-control" name="" id="storageModel">
+              <option selected>-</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </form>
+    `;
+
+    return container;
+  }
+
+  static createPcSpecsTable() {
+    let container = document.createElement("div");
+    container.innerHTML += `
+    <div class="bg-secondary d-flex flex-wrap my-3 py-4">
+      <table class="table table-striped ">
+        <thead>
+          <tr>
+            <th scope="col"></th>
+            <th scope="col">Brand</th>
+            <th scope="col">Model</th>
+            <th scope="col">Size</th>
+            <th scope="col">HDD/SSD</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">CPU</th>
+            <td>Intel</td>
+            <td>Core i9-9900KS</td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <th scope="row">GPU</th>
+            <td>Nvidia</td>
+            <td>RTX 3090</td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <th scope="row">Memory</th>
+            <td>G.SKILL</td>
+            <td>Ripjaws 4 DDR4 2400 C14</td>
+            <td>8x16GB</td>
+            <td></td>
+          </tr>
+          <tr>
+            <th scope="row">Storage</th>
+            <td>Intel</td>
+            <td>900P Optane NVMe PCIe</td>
+            <td>280GB</td>
+            <td>SSD</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="col-12 row justify-content-end">
+        <h4>Gaming: 40 %</h4>
+        <h4 class="pl-4">Work: 50 %</h4>
+      </div>
+    </div>
+    `;
+    return container;
+  }
+
+  static createOptions(values){
+    let options = "";
+    for(const value of values){
+      options += `<option value="${value}">${value}</option>`
+    }
+    return options;
+  }
+}
+
+class Controller {
+  static buildPage() {
+    config.parent.append(View.createInitialForm());
+  }
+
+  static fetchCpu() {
+    fetch(config.url + "?type=cpu")
+      .then((response) => response.json())
+      .then((data) => {
+        let brands = Controller.getValues(data, "Brand");
+        View.createOptions(brands);
+      });
+  }
+
+  static getValues(data, keyName){
+    let hashmap = {};
+    for(let product of data){
+      let current = product[keyName];
+      if(hashmap[current] === undefined) hashmap[current] = current;
+    }
+    let result = Object.keys(hashmap);
+    console.log(result);
+    return result;
+  }
+}
+
+Controller.buildPage();
+Controller.fetchData();
