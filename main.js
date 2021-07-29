@@ -13,7 +13,7 @@ class PC {
 }
 
 class View {
-  static createInitialForm() {
+  static createInitialForm(data) {
     let container = document.createElement("div");
     container.classList.add("min-vh-100", "bg-success");
 
@@ -56,7 +56,7 @@ class View {
     return container;
   }
 
-  static createCpuForm(data) {
+  static createCpuForm() {
     let container = document.createElement("div");
     container.classList.add("col-lg-6", "col-12");
     container.innerHTML = `
@@ -83,8 +83,11 @@ class View {
     </form>
     `;
 
-    // container.querySelectorAll("#cpuBrand")[0].innerHTML += View.createOptions(pc.cpu.brand);
-    // container.querySelectorAll("#cpuBrand")[0].innerHTML += `<option value="1">1</option>`;
+    let cpuBrand = container.querySelectorAll("#cpuBrand")[0];
+    let cpuModel = container.querySelectorAll("#cpuModel")[0];
+    cpuBrand.addEventListener("change", function () {
+      Controller.setCpuModel(cpuBrand, cpuModel);
+    });
 
     return container;
   }
@@ -116,6 +119,12 @@ class View {
     </form>
     `;
 
+    let gpuBrand = container.querySelectorAll("#gpuBrand")[0];
+    let gpuModel = container.querySelectorAll("#gpuModel")[0];
+    gpuBrand.addEventListener("change", function () {
+      Controller.setGpuModel(gpuBrand, gpuModel);
+    });
+
     return container;
   }
 
@@ -131,6 +140,10 @@ class View {
           <div class="col-sm">
             <select class="form-control" name="" id="numOfRam">
               <option selected>Choose...</option>
+              <option>1</option>
+              <option>2</option>
+              <option>3</option>
+              <option>4</option>
             </select>
           </div>
         </div>
@@ -257,12 +270,12 @@ class View {
     return container;
   }
 
-  static createOptions(values){
+  static createOptions(values, parentEle) {
     let options = "";
-    for(const value of values){
-      options += `<option value="${value}">${value}</option>`
+    for (const value of values) {
+      options += `<option value="${value}">${value}</option>`;
     }
-    return options;
+    parentEle.innerHTML += options;
   }
 }
 
@@ -271,26 +284,71 @@ class Controller {
     config.parent.append(View.createInitialForm());
   }
 
-  static fetchCpu() {
+  static getCpu(key, parentEle) {
     fetch(config.url + "?type=cpu")
       .then((response) => response.json())
       .then((data) => {
-        let brands = Controller.getValues(data, "Brand");
-        View.createOptions(brands);
+        let values = Controller.getValues(data, key);
+        View.createOptions(values, parentEle);
       });
   }
 
-  static getValues(data, keyName){
+  static getGpu(key, parentEle) {
+    fetch(config.url + "?type=gpu")
+      .then((response) => response.json())
+      .then((data) => {
+        let values = Controller.getValues(data, key);
+        View.createOptions(values, parentEle);
+      });
+  }
+
+  static getValues(data, keyName) {
     let hashmap = {};
-    for(let product of data){
+    for (const product of data) {
       let current = product[keyName];
-      if(hashmap[current] === undefined) hashmap[current] = current;
+      if (hashmap[current] === undefined) hashmap[current] = current;
     }
     let result = Object.keys(hashmap);
     console.log(result);
     return result;
   }
+
+  //選択されたブランドのモデルのoptionを作成する
+  static setCpuModel(brandEle, modelEle) {
+    fetch(config.url + "?type=cpu")
+      .then((response) => response.json())
+      .then((data) => {
+        let models = [];
+        for (const product of data) {
+          if (product.Brand === brandEle.value) {
+            models.push(product.Model);
+            modelEle.innerHTML = `<option selected>Choose...</option>`;
+            View.createOptions(models, modelEle);
+          }
+        }
+      });
+  }
+  static setGpuModel(brandEle, modelEle) {
+    fetch(config.url + "?type=gpu")
+      .then((response) => response.json())
+      .then((data) => {
+        let models = [];
+        for (const product of data) {
+          if (product.Brand === brandEle.value) {
+            models.push(product.Model);
+            modelEle.innerHTML = `<option selected>Choose...</option>`;
+            View.createOptions(models, modelEle);
+          }
+        }
+      });
+  }
+
 }
 
 Controller.buildPage();
-Controller.fetchData();
+
+let ele1 = document.getElementById("cpuBrand");
+let ele2 = document.getElementById("gpuBrand");
+Controller.getCpu("Brand", ele1);
+Controller.getGpu("Brand", ele2);
+// Controller.getCpu("Model", ele2);
