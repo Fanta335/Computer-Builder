@@ -15,32 +15,30 @@ class PC {
 class View {
   static createInitialForm(data) {
     let container = document.createElement("div");
-    container.classList.add("min-vh-100", "bg-success");
+    container.classList.add("min-vh-100", "bg-green");
 
     container.innerHTML = `
-    <div class="min-vh-100 bg-success">
-      <div class="d-flex flex-wrap justify-content-center">
-        <div class="bg-dark col-12 py-3">
-          <h1 class="text-white text-center">Build Your Own PC</h1>
-        </div>
-        <div class="cpu-form col-12 p-3 d-flex flex-wrap">
+    <div class="d-flex flex-wrap justify-content-center">
+      <div class="bg-dark col-12 py-3">
+        <h1 class="text-white text-center">Build Your Own PC</h1>
+      </div>
+      <div class="cpu-form col-12 p-3 d-flex flex-wrap">
 
-        </div>
-        <div class="gpu-form col-12 p-3 d-flex flex-wrap">
+      </div>
+      <div class="gpu-form col-12 p-3 d-flex flex-wrap">
 
-        </div>
-        <div class="ram-form col-12 p-3 d-flex flex-wrap">
+      </div>
+      <div class="ram-form col-12 p-3 d-flex flex-wrap">
 
-        </div>
-        <div class="storage-form col-12 p-3 d-flex flex-wrap">
+      </div>
+      <div class="storage-form col-12 p-3 d-flex flex-wrap">
 
-        </div>
-        <div class="col-12 d-flex justify-content-center">
-          <button class="evaluateBtn col-3 btn btn-primary">ADD PC</button>
-        </div>
-        <div class="pc-specs col-12">
+      </div>
+      <div class="col-12 d-flex justify-content-center">
+        <button class="evaluateBtn col-3 btn btn-dark">ADD PC</button>
+      </div>
+      <div class="pc-specs col-12">
 
-        </div>
       </div>
     </div>
     `;
@@ -173,9 +171,9 @@ class View {
     numOfRam.addEventListener("change", function () {
       Controller.setRamBrand(numOfRam.value, ramBrand);
     });
-    ramBrand.addEventListener("change", function(){
+    ramBrand.addEventListener("change", function () {
       Controller.setRamModel(numOfRam.value, ramBrand, ramModel);
-    })
+    });
 
     return container;
   }
@@ -192,15 +190,15 @@ class View {
           <div class="col-sm">
             <select class="form-control" name="" id="storageType">
               <option selected>Choose...</option>
-              <option value="HDD">HDD</option>
-              <option value="SSD">SSD</option>
+              <option value="hdd">HDD</option>
+              <option value="ssd">SSD</option>
             </select>
           </div>
         </div>
         <div class="form-group col-lg-3 col-6 row align-items-center justify-content-start">
-          <label class="w-auto pl-3 col-form-label" for="storageVol">Storage</label>
+          <label class="w-auto pl-3 col-form-label" for="storageSize">Storage</label>
           <div class="col-sm">
-            <select class="form-control" name="" id="storageVol">
+            <select class="form-control" name="" id="storageSize">
               <option selected>-</option>
             </select>
           </div>
@@ -225,13 +223,27 @@ class View {
     </form>
     `;
 
+    let storageType = container.querySelectorAll("#storageType")[0];
+    let storageSize = container.querySelectorAll("#storageSize")[0];
+    let storageBrand = container.querySelectorAll("#storageBrand")[0];
+    let storageModel = container.querySelectorAll("#storageModel")[0];
+    storageType.addEventListener("change", function () {
+      Controller.setStorageSize(storageType.value, storageSize);
+    });
+    storageSize.addEventListener("change", function () {
+      Controller.setStorageBrand(storageType, storageSize, storageBrand);
+    });
+    storageBrand.addEventListener("change", function () {
+      Controller.setStorageModel(storageType, storageSize, storageBrand, storageModel);
+    });
+
     return container;
   }
 
   static createPcSpecsTable() {
     let container = document.createElement("div");
     container.innerHTML += `
-    <div class="bg-secondary d-flex flex-wrap my-3 py-4">
+    <div class="bg-white d-flex flex-wrap my-3 py-4">
       <table class="table table-striped ">
         <thead>
           <tr>
@@ -321,7 +333,6 @@ class Controller {
       if (hashmap[current] === undefined) hashmap[current] = current;
     }
     let result = Object.keys(hashmap);
-    console.log(result);
     return result;
   }
 
@@ -373,21 +384,80 @@ class Controller {
       });
   }
 
-  static setRamModel(numOfStick, brandEle, modelEle){
+  static setRamModel(numOfStick, brandEle, modelEle) {
     let regex = new RegExp(String.raw`${numOfStick}x\d{1,2}GB`, "g");
 
     fetch(config.url + "?type=ram")
-    .then((response) => response.json())
-    .then((data) => {
-      let models = [];
-      for (const product of data) {
-        if (regex.test(product.Model) && product.Brand === brandEle.value) {
-          models.push(product.Model);
-          modelEle.innerHTML = `<option selected>Choose...</option>`;
-          View.createOptions(models, modelEle);
+      .then((response) => response.json())
+      .then((data) => {
+        let models = [];
+        for (const product of data) {
+          if (regex.test(product.Model) && product.Brand === brandEle.value) {
+            models.push(product.Model);
+            modelEle.innerHTML = `<option selected>Choose...</option>`;
+            View.createOptions(models, modelEle);
+          }
         }
-      }
-    });
+      });
+  }
+
+  static setStorageSize(storageType, sizeEle) {
+    let regex = /\d{1,3}[TG]B/g;
+
+    fetch(config.url + `?type=${storageType}`)
+      .then((response) => response.json())
+      .then((data) => {
+        let hashmap = {};
+        for (const product of data) {
+          let result = regex[Symbol.matchAll](product.Model);
+          let size = Array.from(result, (x) => x[0]).join("");
+          if (hashmap[size] === undefined) hashmap[size] = size;
+        }
+        let sizes = Object.keys(hashmap);
+        sizeEle.innerHTML = `<option selected>Choose...</option>`;
+        View.createOptions(sizes, sizeEle);
+      });
+  }
+
+  static sortStorageSize(sizes) {}
+
+  static setStorageBrand(typeEle, sizeEle, brandEle) {
+    let regex = /\d{1,3}[TG]B/g;
+
+    fetch(config.url + `?type=${typeEle.value}`)
+      .then((response) => response.json())
+      .then((data) => {
+        let hashmap = {};
+        for (const product of data) {
+          let result = regex[Symbol.matchAll](product.Model);
+          let size = Array.from(result, (x) => x[0]).join("");
+          if (size === sizeEle.value && hashmap[product.Brand] === undefined) {
+            hashmap[product.Brand] = product.Brand;
+          }
+        }
+        let brands = Object.keys(hashmap);
+        brandEle.innerHTML = `<option selected>Choose...</option>`;
+        View.createOptions(brands, brandEle);
+      });
+  }
+
+  static setStorageModel(typeEle, sizeEle, brandEle, modelEle) {
+    let regex = /\d{1,3}[TG]B/g;
+
+    fetch(config.url + `?type=${typeEle.value}`)
+      .then((response) => response.json())
+      .then((data) => {
+        let models = [];
+        for (const product of data) {
+          let result = regex[Symbol.matchAll](product.Model);
+          let size = Array.from(result, (x) => x[0]).join("");
+          if (size === sizeEle.value && product.Brand === brandEle.value) {
+            models.push(product.Model);
+          }
+        }
+        modelEle.innerHTML = `<option selected>Choose...</option>`;
+        View.createOptions(models, modelEle);
+      });
   }
 }
 
@@ -397,4 +467,5 @@ let ele1 = document.getElementById("cpuBrand");
 let ele2 = document.getElementById("gpuBrand");
 Controller.getCpu("Brand", ele1);
 Controller.getGpu("Brand", ele2);
-// Controller.getCpu("Model", ele2);
+
+// Controller.setStorageSize("hdd");
