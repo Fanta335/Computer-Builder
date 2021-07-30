@@ -140,10 +140,10 @@ class View {
           <div class="col-sm">
             <select class="form-control" name="" id="numOfRam">
               <option selected>Choose...</option>
-              <option>1</option>
-              <option>2</option>
-              <option>3</option>
-              <option>4</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="4">4</option>
+              <option value="8">8</option>
             </select>
           </div>
         </div>
@@ -167,6 +167,16 @@ class View {
     </form>
     `;
 
+    let numOfRam = container.querySelectorAll("#numOfRam")[0];
+    let ramBrand = container.querySelectorAll("#ramBrand")[0];
+    let ramModel = container.querySelectorAll("#ramModel")[0];
+    numOfRam.addEventListener("change", function () {
+      Controller.setRamBrand(numOfRam.value, ramBrand);
+    });
+    ramBrand.addEventListener("change", function(){
+      Controller.setRamModel(numOfRam.value, ramBrand, ramModel);
+    })
+
     return container;
   }
 
@@ -182,6 +192,8 @@ class View {
           <div class="col-sm">
             <select class="form-control" name="" id="storageType">
               <option selected>Choose...</option>
+              <option value="HDD">HDD</option>
+              <option value="SSD">SSD</option>
             </select>
           </div>
         </div>
@@ -288,8 +300,8 @@ class Controller {
     fetch(config.url + "?type=cpu")
       .then((response) => response.json())
       .then((data) => {
-        let values = Controller.getValues(data, key);
-        View.createOptions(values, parentEle);
+        let brands = Controller.getValues(data, key);
+        View.createOptions(brands, parentEle);
       });
   }
 
@@ -297,8 +309,8 @@ class Controller {
     fetch(config.url + "?type=gpu")
       .then((response) => response.json())
       .then((data) => {
-        let values = Controller.getValues(data, key);
-        View.createOptions(values, parentEle);
+        let brands = Controller.getValues(data, key);
+        View.createOptions(brands, parentEle);
       });
   }
 
@@ -343,6 +355,40 @@ class Controller {
       });
   }
 
+  static setRamBrand(numOfStick, brandEle) {
+    let regex = new RegExp(String.raw`${numOfStick}x\d{1,2}GB`, "g");
+
+    fetch(config.url + "?type=ram")
+      .then((response) => response.json())
+      .then((data) => {
+        let hashmap = {};
+        for (const product of data) {
+          if (regex.test(product.Model) && hashmap[product.Brand] === undefined) {
+            hashmap[product.Brand] = product.Brand;
+          }
+        }
+        let brands = Object.keys(hashmap);
+        brandEle.innerHTML = `<option selected>Choose...</option>`;
+        View.createOptions(brands, brandEle);
+      });
+  }
+
+  static setRamModel(numOfStick, brandEle, modelEle){
+    let regex = new RegExp(String.raw`${numOfStick}x\d{1,2}GB`, "g");
+
+    fetch(config.url + "?type=ram")
+    .then((response) => response.json())
+    .then((data) => {
+      let models = [];
+      for (const product of data) {
+        if (regex.test(product.Model) && product.Brand === brandEle.value) {
+          models.push(product.Model);
+          modelEle.innerHTML = `<option selected>Choose...</option>`;
+          View.createOptions(models, modelEle);
+        }
+      }
+    });
+  }
 }
 
 Controller.buildPage();
