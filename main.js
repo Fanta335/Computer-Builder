@@ -1,19 +1,72 @@
 const config = {
   url: "https://api.recursionist.io/builder/computers",
   parent: document.getElementById("parent"),
+  scorefactors: [
+    {
+      usage: "gaming",
+      cpu: 0.25,
+      gpu: 0.6,
+      ram: 0.125,
+      storage: 0.025,
+    },
+    {
+      usage: "work",
+      cpu: 0.6,
+      gpu: 0.25,
+      ram: 0.1,
+      storage: 0.05,
+    },
+  ],
+  alert: "Fill all select form!",
 };
 
-class PC {
+class Table {
+  contents;
+
   constructor(cpu, gpu, ram, storage) {
     this.cpu = cpu;
     this.gpu = gpu;
     this.ram = ram;
     this.storage = storage;
   }
+
+  static addContent(tableContent) {
+    if (this.contents === undefined) this.contents = [];
+    this.contents.push(tableContent);
+  }
+
+  static getNewestContent() {
+    if (this.contents === undefined) return null;
+    else return this.contents[this.contents.length - 1];
+  }
+
+  static getScore(content, usage) {
+    let index = 0;
+    let factors = config.scorefactors;
+    for (let i = 0; i < factors.length; i++) {
+      if (factors[i].usage === usage) index = i;
+    }
+
+    let cpuScore = content.cpu.benchMark * factors[index].cpu;
+    let gpuScore = content.gpu.benchMark * factors[index].gpu;
+    let ramScore = content.ram.benchMark * factors[index].ram;
+    let storageScore = content.storage.benchMark * factors[index].storage;
+    return Math.floor(cpuScore + gpuScore + ramScore + storageScore);
+  }
+}
+
+class Part {
+  constructor(brand, model, benchMark, size, type) {
+    this.brand = brand;
+    this.model = model;
+    this.benchMark = benchMark;
+    this.size = size;
+    this.type = type;
+  }
 }
 
 class View {
-  static createInitialForm(data) {
+  static createInitialForm() {
     let container = document.createElement("div");
     container.classList.add("min-vh-100", "bg-green");
 
@@ -37,7 +90,7 @@ class View {
       <div class="col-12 d-flex justify-content-center">
         <button class="evaluateBtn col-3 btn btn-dark">ADD PC</button>
       </div>
-      <div class="pc-specs col-12">
+      <div class="table-container col-12">
 
       </div>
     </div>
@@ -48,7 +101,13 @@ class View {
     container.querySelectorAll(".ram-form")[0].append(View.createRamForm());
     container.querySelectorAll(".storage-form")[0].append(View.createStorageForm());
     container.querySelectorAll(".evaluateBtn")[0].addEventListener("click", function () {
-      container.querySelectorAll(".pc-specs")[0].append(View.createPcSpecsTable());
+      let selectEles = container.querySelectorAll(".part-info");
+      if(Controller.validate(selectEles) === false) {
+        alert(config.alert);
+        return;
+      }
+      let newContent = Controller.makeTableContent();
+      container.querySelectorAll(".table-container")[0].append(View.createTable(newContent));
     });
 
     return container;
@@ -64,7 +123,7 @@ class View {
         <div class="form-group col-6 row align-items-center justify-content-start">
           <label class="w-auto pl-3 col-form-label" for="cpuBrand">Brand</label>
           <div class="col-sm">
-            <select class="form-control" id="cpuBrand">
+            <select class="form-control part-info" id="cpuBrand">
               <option selected>Choose...</option>
             </select>
           </div>
@@ -72,7 +131,7 @@ class View {
         <div class="form-group col-6 row align-items-center justify-content-start">
           <label class="w-auto pl-3 col-form-label" for="cpuModel">Model</label>
           <div class="col-sm">
-            <select class="form-control" name="" id="cpuModel">
+            <select class="form-control part-info" name="" id="cpuModel">
               <option selected>-</option>
             </select>
           </div>
@@ -100,7 +159,7 @@ class View {
         <div class="form-group col-6 row align-items-center justify-content-start">
           <label class="w-auto pl-3 col-form-label" for="gpuBrand">Brand</label>
           <div class="col-sm">
-            <select class="form-control" name="" id="gpuBrand">
+            <select class="form-control part-info" name="" id="gpuBrand">
               <option selected>Choose...</option>
             </select>
           </div>
@@ -108,7 +167,7 @@ class View {
         <div class="form-group col-6 row align-items-center justify-content-start">
           <label class="w-auto pl-3 col-form-label" for="gpuModel">Model</label>
           <div class="col-sm">
-            <select class="form-control" name="" id="gpuModel">
+            <select class="form-control part-info" name="" id="gpuModel">
               <option selected>-</option>
             </select>
           </div>
@@ -136,7 +195,7 @@ class View {
         <div class="form-group col-4 row align-items-center justify-content-start">
           <label class="w-auto pl-3 col-form-label" for="numOfRam">How many?</label>
           <div class="col-sm">
-            <select class="form-control" name="" id="numOfRam">
+            <select class="form-control part-info" name="" id="numOfRam">
               <option selected>Choose...</option>
               <option value="1">1</option>
               <option value="2">2</option>
@@ -148,7 +207,7 @@ class View {
         <div class="form-group col-4 row align-items-center justify-content-start">
           <label class="w-auto pl-3 col-form-label" for="ramBrand">Brand</label>
           <div class="col-sm">
-            <select class="form-control" name="" id="ramBrand">
+            <select class="form-control part-info" name="" id="ramBrand">
               <option selected>-</option>
             </select>
           </div>
@@ -156,7 +215,7 @@ class View {
         <div class="form-group col-4 row align-items-center justify-content-start">
           <label class="w-auto pl-3 col-form-label" for="ramModel">Model</label>
           <div class="col-sm">
-            <select class="form-control" name="" id="ramModel">
+            <select class="form-control part-info" name="" id="ramModel">
               <option selected>-</option>
             </select>
           </div>
@@ -188,7 +247,7 @@ class View {
         <div class="form-group col-lg-3 col-6 row align-items-center justify-content-start">
           <label class="w-auto pl-3 col-form-label" for="storageType">HDD or SSD</label>
           <div class="col-sm">
-            <select class="form-control" name="" id="storageType">
+            <select class="form-control part-info" name="" id="storageType">
               <option selected>Choose...</option>
               <option value="hdd">HDD</option>
               <option value="ssd">SSD</option>
@@ -198,7 +257,7 @@ class View {
         <div class="form-group col-lg-3 col-6 row align-items-center justify-content-start">
           <label class="w-auto pl-3 col-form-label" for="storageSize">Storage</label>
           <div class="col-sm">
-            <select class="form-control" name="" id="storageSize">
+            <select class="form-control part-info" name="" id="storageSize">
               <option selected>-</option>
             </select>
           </div>
@@ -206,7 +265,7 @@ class View {
         <div class="form-group col-lg-3 col-6 row align-items-center justify-content-start">
           <label class="w-auto pl-3 col-form-label" for="storageBrand">Brand</label>
           <div class="col-sm">
-            <select class="form-control" name="" id="storageBrand">
+            <select class="form-control part-info" name="" id="storageBrand">
               <option selected>-</option>
             </select>
           </div>
@@ -214,7 +273,7 @@ class View {
         <div class="form-group col-lg-3 col-6 row align-items-center justify-content-start">
           <label class="w-auto pl-3 col-form-label" for="storageModel">Model</label>
           <div class="col-sm">
-            <select class="form-control" name="" id="storageModel">
+            <select class="form-control part-info" name="" id="storageModel">
               <option selected>-</option>
             </select>
           </div>
@@ -240,7 +299,7 @@ class View {
     return container;
   }
 
-  static createPcSpecsTable() {
+  static createTable(content) {
     let container = document.createElement("div");
     container.innerHTML += `
     <div class="bg-white d-flex flex-wrap my-3 py-4">
@@ -257,40 +316,41 @@ class View {
         <tbody>
           <tr>
             <th scope="row">CPU</th>
-            <td>Intel</td>
-            <td>Core i9-9900KS</td>
+            <td>${content.cpu.brand}</td>
+            <td>${content.cpu.model}</td>
             <td></td>
             <td></td>
           </tr>
           <tr>
             <th scope="row">GPU</th>
-            <td>Nvidia</td>
-            <td>RTX 3090</td>
+            <td>${content.gpu.brand}</td>
+            <td>${content.gpu.model}</td>
             <td></td>
             <td></td>
           </tr>
           <tr>
             <th scope="row">Memory</th>
-            <td>G.SKILL</td>
-            <td>Ripjaws 4 DDR4 2400 C14</td>
-            <td>8x16GB</td>
+            <td>${content.ram.brand}</td>
+            <td>${content.ram.model}</td>
+            <td>${content.ram.size}</td>
             <td></td>
           </tr>
           <tr>
             <th scope="row">Storage</th>
-            <td>Intel</td>
-            <td>900P Optane NVMe PCIe</td>
-            <td>280GB</td>
-            <td>SSD</td>
+            <td>${content.storage.brand}</td>
+            <td>${content.storage.model}</td>
+            <td>${content.storage.size}</td>
+            <td>${content.storage.type}</td>
           </tr>
         </tbody>
       </table>
       <div class="col-12 row justify-content-end">
-        <h4>Gaming: 40 %</h4>
-        <h4 class="pl-4">Work: 50 %</h4>
+        <h4>Gaming: ${Table.getScore(content, "gaming")} %</h4>
+        <h4 class="pl-4">Work: ${Table.getScore(content, "work")} %</h4>
       </div>
     </div>
     `;
+
     return container;
   }
 
@@ -301,6 +361,14 @@ class View {
     }
     parentEle.innerHTML += options;
   }
+
+  static createOptionsWithBenchMark(models, benchMarks, parentEle) {
+    let options = "";
+    for (let i = 0; i < models.length; i++) {
+      options += `<option id="modelOption" value="${models[i]}" data-benchmark="${benchMarks[i]}">${models[i]}</option>`;
+    }
+    parentEle.innerHTML += options;
+  }
 }
 
 class Controller {
@@ -308,7 +376,7 @@ class Controller {
     config.parent.append(View.createInitialForm());
   }
 
-  static getCpu(key, parentEle) {
+  static getCpuBrand(key, parentEle) {
     fetch(config.url + "?type=cpu")
       .then((response) => response.json())
       .then((data) => {
@@ -317,7 +385,7 @@ class Controller {
       });
   }
 
-  static getGpu(key, parentEle) {
+  static getGpuBrand(key, parentEle) {
     fetch(config.url + "?type=gpu")
       .then((response) => response.json())
       .then((data) => {
@@ -342,11 +410,13 @@ class Controller {
       .then((response) => response.json())
       .then((data) => {
         let models = [];
+        let benchMarks = [];
         for (const product of data) {
           if (product.Brand === brandEle.value) {
             models.push(product.Model);
+            benchMarks.push(product.Benchmark);
             modelEle.innerHTML = `<option selected>Choose...</option>`;
-            View.createOptions(models, modelEle);
+            View.createOptionsWithBenchMark(models, benchMarks, modelEle);
           }
         }
       });
@@ -356,11 +426,13 @@ class Controller {
       .then((response) => response.json())
       .then((data) => {
         let models = [];
+        let benchMarks = [];
         for (const product of data) {
           if (product.Brand === brandEle.value) {
             models.push(product.Model);
+            benchMarks.push(product.Benchmark);
             modelEle.innerHTML = `<option selected>Choose...</option>`;
-            View.createOptions(models, modelEle);
+            View.createOptionsWithBenchMark(models, benchMarks, modelEle);
           }
         }
       });
@@ -391,11 +463,13 @@ class Controller {
       .then((response) => response.json())
       .then((data) => {
         let models = [];
+        let benchMarks = [];
         for (const product of data) {
           if (regex.test(product.Model) && product.Brand === brandEle.value) {
             models.push(product.Model);
+            benchMarks.push(product.Benchmark);
             modelEle.innerHTML = `<option selected>Choose...</option>`;
-            View.createOptions(models, modelEle);
+            View.createOptionsWithBenchMark(models, benchMarks, modelEle);
           }
         }
       });
@@ -448,16 +522,91 @@ class Controller {
       .then((response) => response.json())
       .then((data) => {
         let models = [];
+        let benchMarks = [];
         for (const product of data) {
           let result = regex[Symbol.matchAll](product.Model);
           let size = Array.from(result, (x) => x[0]).join("");
           if (size === sizeEle.value && product.Brand === brandEle.value) {
             models.push(product.Model);
+            benchMarks.push(product.Benchmark);
           }
         }
         modelEle.innerHTML = `<option selected>Choose...</option>`;
-        View.createOptions(models, modelEle);
+        View.createOptionsWithBenchMark(models, benchMarks, modelEle);
       });
+  }
+
+  static makeTableContent() {
+    let cpu = Controller.getAllCpuInfo();
+    let gpu = Controller.getAllGpuInfo();
+    let ram = Controller.getAllRamInfo();
+    let storage = Controller.getAllStorageInfo();
+
+    if(!cpu) return null;
+
+    let newContent = new Table(cpu, gpu, ram, storage);
+    Table.addContent(newContent);
+    return Table.getNewestContent();
+  }
+
+  static getAllCpuInfo() {
+    let brand = document.querySelectorAll("#cpuBrand")[0].value;
+    let model = document.querySelectorAll("#cpuModel")[0].value;
+    let benchMark;
+    let options = document.querySelectorAll("#modelOption");
+    for (const option of options) {
+      if (option.value === model) benchMark = parseInt(option.dataset.benchmark);
+    }
+
+    return new Part(brand, model, benchMark, null, null);
+  }
+
+  static getAllGpuInfo() {
+    let brand = document.querySelectorAll("#gpuBrand")[0].value;
+    let model = document.querySelectorAll("#gpuModel")[0].value;
+    let benchMark;
+    let options = document.querySelectorAll("#modelOption");
+    for (const option of options) {
+      if (option.value === model) benchMark = parseInt(option.dataset.benchmark);
+    }
+
+    return new Part(brand, model, benchMark, null, null);
+  }
+
+  static getAllRamInfo() {
+    let brand = document.querySelectorAll("#ramBrand")[0].value;
+    let model = document.querySelectorAll("#ramModel")[0].value;
+    let benchMark;
+    let options = document.querySelectorAll("#modelOption");
+    for (const option of options) {
+      if (option.value === model) benchMark = parseInt(option.dataset.benchmark);
+    }
+
+    let regex = /\dx\d{1,2}GB/g;
+    let result = regex[Symbol.matchAll](model);
+    let size = Array.from(result, (x) => x[0]).join("");
+
+    return new Part(brand, model, benchMark, size, null);
+  }
+
+  static getAllStorageInfo() {
+    let type = document.querySelectorAll("#storageType")[0].value.toUpperCase();
+    let brand = document.querySelectorAll("#storageBrand")[0].value;
+    let model = document.querySelectorAll("#storageModel")[0].value;
+    let size = document.querySelectorAll("#storageSize")[0].value;
+    let benchMark;
+    let options = document.querySelectorAll("#modelOption");
+    for (const option of options) {
+      if (option.value === model) benchMark = parseInt(option.dataset.benchmark);
+    }
+    return new Part(brand, model, benchMark, size, type);
+  }
+
+  static validate(selectEles){
+    for(const ele of selectEles){
+      if(ele.value === "Choose...") return false;
+    }
+    return true;
   }
 }
 
@@ -465,7 +614,5 @@ Controller.buildPage();
 
 let ele1 = document.getElementById("cpuBrand");
 let ele2 = document.getElementById("gpuBrand");
-Controller.getCpu("Brand", ele1);
-Controller.getGpu("Brand", ele2);
-
-// Controller.setStorageSize("hdd");
+Controller.getCpuBrand("Brand", ele1);
+Controller.getGpuBrand("Brand", ele2);
