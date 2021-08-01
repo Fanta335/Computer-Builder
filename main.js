@@ -1,6 +1,6 @@
 const config = {
   url: "https://api.recursionist.io/builder/computers",
-  parent: document.getElementById("parent"),
+  target: document.getElementById("target"),
   scorefactors: [
     {
       usage: "gaming",
@@ -19,6 +19,10 @@ const config = {
   ],
   alert: "Fill all select form!",
 };
+
+// class TableData {
+//   contents;
+// }
 
 class Table {
   contents;
@@ -100,9 +104,9 @@ class View {
     container.querySelectorAll(".gpu-form")[0].append(View.createGpuForm());
     container.querySelectorAll(".ram-form")[0].append(View.createRamForm());
     container.querySelectorAll(".storage-form")[0].append(View.createStorageForm());
-    container.querySelectorAll(".evaluateBtn")[0].addEventListener("click", function () {
+    container.querySelectorAll(".evaluateBtn")[0].addEventListener("click", () => {
       let selectEles = container.querySelectorAll(".part-info");
-      if(Controller.validate(selectEles) === false) {
+      if (Controller.validate(selectEles) === false) {
         alert(config.alert);
         return;
       }
@@ -142,8 +146,8 @@ class View {
 
     let cpuBrand = container.querySelectorAll("#cpuBrand")[0];
     let cpuModel = container.querySelectorAll("#cpuModel")[0];
-    cpuBrand.addEventListener("change", function () {
-      Controller.setCpuModel(cpuBrand, cpuModel);
+    cpuBrand.addEventListener("change", () => {
+      Controller.setModel(cpuBrand, cpuModel, "cpu");
     });
 
     return container;
@@ -178,8 +182,8 @@ class View {
 
     let gpuBrand = container.querySelectorAll("#gpuBrand")[0];
     let gpuModel = container.querySelectorAll("#gpuModel")[0];
-    gpuBrand.addEventListener("change", function () {
-      Controller.setGpuModel(gpuBrand, gpuModel);
+    gpuBrand.addEventListener("change", () => {
+      Controller.setModel(gpuBrand, gpuModel, "gpu");
     });
 
     return container;
@@ -227,10 +231,10 @@ class View {
     let numOfRam = container.querySelectorAll("#numOfRam")[0];
     let ramBrand = container.querySelectorAll("#ramBrand")[0];
     let ramModel = container.querySelectorAll("#ramModel")[0];
-    numOfRam.addEventListener("change", function () {
+    numOfRam.addEventListener("change", () => {
       Controller.setRamBrand(numOfRam.value, ramBrand);
     });
-    ramBrand.addEventListener("change", function () {
+    ramBrand.addEventListener("change", () => {
       Controller.setRamModel(numOfRam.value, ramBrand, ramModel);
     });
 
@@ -286,13 +290,13 @@ class View {
     let storageSize = container.querySelectorAll("#storageSize")[0];
     let storageBrand = container.querySelectorAll("#storageBrand")[0];
     let storageModel = container.querySelectorAll("#storageModel")[0];
-    storageType.addEventListener("change", function () {
+    storageType.addEventListener("change", () => {
       Controller.setStorageSize(storageType.value, storageSize);
     });
-    storageSize.addEventListener("change", function () {
+    storageSize.addEventListener("change", () => {
       Controller.setStorageBrand(storageType, storageSize, storageBrand);
     });
-    storageBrand.addEventListener("change", function () {
+    storageBrand.addEventListener("change", () => {
       Controller.setStorageModel(storageType, storageSize, storageBrand, storageModel);
     });
 
@@ -373,20 +377,13 @@ class View {
 
 class Controller {
   static buildPage() {
-    config.parent.append(View.createInitialForm());
+    config.target.append(View.createInitialForm());
+    Controller.setBrand("Brand", document.getElementById("cpuBrand"), "cpu");
+    Controller.setBrand("Brand", document.getElementById("gpuBrand"), "gpu");
   }
 
-  static getCpuBrand(key, parentEle) {
-    fetch(config.url + "?type=cpu")
-      .then((response) => response.json())
-      .then((data) => {
-        let brands = Controller.getValues(data, key);
-        View.createOptions(brands, parentEle);
-      });
-  }
-
-  static getGpuBrand(key, parentEle) {
-    fetch(config.url + "?type=gpu")
+  static setBrand(key, parentEle, type) {
+    fetch(config.url + `?type=${type}`)
       .then((response) => response.json())
       .then((data) => {
         let brands = Controller.getValues(data, key);
@@ -404,25 +401,8 @@ class Controller {
     return result;
   }
 
-  //選択されたブランドのモデルのoptionを作成する
-  static setCpuModel(brandEle, modelEle) {
-    fetch(config.url + "?type=cpu")
-      .then((response) => response.json())
-      .then((data) => {
-        let models = [];
-        let benchMarks = [];
-        for (const product of data) {
-          if (product.Brand === brandEle.value) {
-            models.push(product.Model);
-            benchMarks.push(product.Benchmark);
-            modelEle.innerHTML = `<option selected>Choose...</option>`;
-            View.createOptionsWithBenchMark(models, benchMarks, modelEle);
-          }
-        }
-      });
-  }
-  static setGpuModel(brandEle, modelEle) {
-    fetch(config.url + "?type=gpu")
+  static setModel(brandEle, modelEle, type) {
+    fetch(config.url + `?type=${type}`)
       .then((response) => response.json())
       .then((data) => {
         let models = [];
@@ -488,12 +468,49 @@ class Controller {
           if (hashmap[size] === undefined) hashmap[size] = size;
         }
         let sizes = Object.keys(hashmap);
+        let sorted = Controller.getSortedStorageSize(sizes);
         sizeEle.innerHTML = `<option selected>Choose...</option>`;
-        View.createOptions(sizes, sizeEle);
+        View.createOptions(sorted, sizeEle);
       });
   }
 
-  static sortStorageSize(sizes) {}
+  //sizes配列を容量が大きい順に並べかえた、新しい配列を返す
+  static getSortedStorageSize(sizes) {
+    let tb = [];
+    let gb = [];
+    let ex = [];
+    let tbResult = [];
+    let gbResult = [];
+    let exResult = [];
+    for (const size of sizes) {
+      let len = size.length;
+      let num = parseInt(size.substring(0, len - 2));
+      let unit = size.substring(len - 2, len);
+
+      if (unit === "TB") {
+        tb.push(num);
+        tbResult = Controller.sortAndAddUnit(tb, unit);
+      }
+      else if (unit === "GB") {
+        gb.push(num);
+        gbResult = Controller.sortAndAddUnit(gb, unit);
+      }
+      else {
+        ex.push(num);
+        exResult = Controller.sortAndAddUnit(ex, unit);
+      }
+    }
+
+    return tbResult.concat(gbResult, exResult);
+  }
+
+  static sortAndAddUnit(arr, unit) {
+    if (arr.length === 0) return;
+
+    arr.sort((a, b) => b - a);
+    let arrWithUnit = arr.map((num) => num + unit);
+    return arrWithUnit;
+  }
 
   static setStorageBrand(typeEle, sizeEle, brandEle) {
     let regex = /\d{1,3}[TG]B/g;
@@ -541,8 +558,6 @@ class Controller {
     let gpu = Controller.getAllGpuInfo();
     let ram = Controller.getAllRamInfo();
     let storage = Controller.getAllStorageInfo();
-
-    if(!cpu) return null;
 
     let newContent = new Table(cpu, gpu, ram, storage);
     Table.addContent(newContent);
@@ -602,17 +617,12 @@ class Controller {
     return new Part(brand, model, benchMark, size, type);
   }
 
-  static validate(selectEles){
-    for(const ele of selectEles){
-      if(ele.value === "Choose...") return false;
+  static validate(selectEles) {
+    for (const ele of selectEles) {
+      if (ele.value === "Choose...") return false;
     }
     return true;
   }
 }
 
 Controller.buildPage();
-
-let ele1 = document.getElementById("cpuBrand");
-let ele2 = document.getElementById("gpuBrand");
-Controller.getCpuBrand("Brand", ele1);
-Controller.getGpuBrand("Brand", ele2);
