@@ -17,29 +17,19 @@ const config = {
       storage: 0.05,
     },
   ],
-  alert: "Fill all select form!",
+  formText: "Choose...",
+  alertMessage: "Fill all select form!",
 };
 
-// class TableData {
-//   contents;
-// }
-
-class Table {
+class TableData {
   contents;
 
-  constructor(cpu, gpu, ram, storage) {
-    this.cpu = cpu;
-    this.gpu = gpu;
-    this.ram = ram;
-    this.storage = storage;
-  }
-
-  static addContent(tableContent) {
+  static addContent(newContent) {
     if (this.contents === undefined) this.contents = [];
-    this.contents.push(tableContent);
+    this.contents.push(newContent);
   }
 
-  static getNewestContent() {
+  static getLatestContent() {
     if (this.contents === undefined) return null;
     else return this.contents[this.contents.length - 1];
   }
@@ -56,6 +46,15 @@ class Table {
     let ramScore = content.ram.benchMark * factors[index].ram;
     let storageScore = content.storage.benchMark * factors[index].storage;
     return Math.floor(cpuScore + gpuScore + ramScore + storageScore);
+  }
+}
+
+class Table {
+  constructor(cpu, gpu, ram, storage) {
+    this.cpu = cpu;
+    this.gpu = gpu;
+    this.ram = ram;
+    this.storage = storage;
   }
 }
 
@@ -107,7 +106,7 @@ class View {
     container.querySelectorAll(".evaluateBtn")[0].addEventListener("click", () => {
       let selectEles = container.querySelectorAll(".part-info");
       if (Controller.validate(selectEles) === false) {
-        alert(config.alert);
+        alert(config.alertMessage);
         return;
       }
       let newContent = Controller.makeTableContent();
@@ -128,7 +127,7 @@ class View {
           <label class="w-auto pl-3 col-form-label" for="cpuBrand">Brand</label>
           <div class="col-sm">
             <select class="form-control part-info" id="cpuBrand">
-              <option selected>Choose...</option>
+              <option selected>${config.formText}</option>
             </select>
           </div>
         </div>
@@ -164,7 +163,7 @@ class View {
           <label class="w-auto pl-3 col-form-label" for="gpuBrand">Brand</label>
           <div class="col-sm">
             <select class="form-control part-info" name="" id="gpuBrand">
-              <option selected>Choose...</option>
+              <option selected>${config.formText}</option>
             </select>
           </div>
         </div>
@@ -200,7 +199,7 @@ class View {
           <label class="w-auto pl-3 col-form-label" for="numOfRam">How many?</label>
           <div class="col-sm">
             <select class="form-control part-info" name="" id="numOfRam">
-              <option selected>Choose...</option>
+              <option selected>${config.formText}</option>
               <option value="1">1</option>
               <option value="2">2</option>
               <option value="4">4</option>
@@ -252,7 +251,7 @@ class View {
           <label class="w-auto pl-3 col-form-label" for="storageType">HDD or SSD</label>
           <div class="col-sm">
             <select class="form-control part-info" name="" id="storageType">
-              <option selected>Choose...</option>
+              <option selected>${config.formText}</option>
               <option value="hdd">HDD</option>
               <option value="ssd">SSD</option>
             </select>
@@ -349,8 +348,9 @@ class View {
         </tbody>
       </table>
       <div class="col-12 row justify-content-end">
-        <h4>Gaming: ${Table.getScore(content, "gaming")} %</h4>
-        <h4 class="pl-4">Work: ${Table.getScore(content, "work")} %</h4>
+        <h4>PC${TableData.contents.indexOf(content) + 1}:</h4>
+        <h4 class="pl-4">Gaming: ${TableData.getScore(content, "gaming")} %</h4>
+        <h4 class="pl-4">Work: ${TableData.getScore(content, "work")} %</h4>
       </div>
     </div>
     `;
@@ -387,7 +387,7 @@ class Controller {
       .then((response) => response.json())
       .then((data) => {
         let brands = Controller.getValues(data, key);
-        View.createOptions(brands, parentEle);
+        View.createOptions(brands.sort(), parentEle);
       });
   }
 
@@ -411,8 +411,8 @@ class Controller {
           if (product.Brand === brandEle.value) {
             models.push(product.Model);
             benchMarks.push(product.Benchmark);
-            modelEle.innerHTML = `<option selected>Choose...</option>`;
-            View.createOptionsWithBenchMark(models, benchMarks, modelEle);
+            modelEle.innerHTML = `<option selected>${config.formText}</option>`;
+            View.createOptionsWithBenchMark(models.sort(), benchMarks, modelEle);
           }
         }
       });
@@ -431,8 +431,8 @@ class Controller {
           }
         }
         let brands = Object.keys(hashmap);
-        brandEle.innerHTML = `<option selected>Choose...</option>`;
-        View.createOptions(brands, brandEle);
+        brandEle.innerHTML = `<option selected>${config.formText}</option>`;
+        View.createOptions(brands.sort(), brandEle);
       });
   }
 
@@ -448,8 +448,8 @@ class Controller {
           if (regex.test(product.Model) && product.Brand === brandEle.value) {
             models.push(product.Model);
             benchMarks.push(product.Benchmark);
-            modelEle.innerHTML = `<option selected>Choose...</option>`;
-            View.createOptionsWithBenchMark(models, benchMarks, modelEle);
+            modelEle.innerHTML = `<option selected>${config.formText}</option>`;
+            View.createOptionsWithBenchMark(models.sort(), benchMarks, modelEle);
           }
         }
       });
@@ -469,7 +469,7 @@ class Controller {
         }
         let sizes = Object.keys(hashmap);
         let sorted = Controller.getSortedStorageSize(sizes);
-        sizeEle.innerHTML = `<option selected>Choose...</option>`;
+        sizeEle.innerHTML = `<option selected>${config.formText}</option>`;
         View.createOptions(sorted, sizeEle);
       });
   }
@@ -527,8 +527,8 @@ class Controller {
           }
         }
         let brands = Object.keys(hashmap);
-        brandEle.innerHTML = `<option selected>Choose...</option>`;
-        View.createOptions(brands, brandEle);
+        brandEle.innerHTML = `<option selected>${config.formText}</option>`;
+        View.createOptions(brands.sort(), brandEle);
       });
   }
 
@@ -548,8 +548,8 @@ class Controller {
             benchMarks.push(product.Benchmark);
           }
         }
-        modelEle.innerHTML = `<option selected>Choose...</option>`;
-        View.createOptionsWithBenchMark(models, benchMarks, modelEle);
+        modelEle.innerHTML = `<option selected>${config.formText}</option>`;
+        View.createOptionsWithBenchMark(models.sort(), benchMarks, modelEle);
       });
   }
 
@@ -560,8 +560,8 @@ class Controller {
     let storage = Controller.getAllStorageInfo();
 
     let newContent = new Table(cpu, gpu, ram, storage);
-    Table.addContent(newContent);
-    return Table.getNewestContent();
+    TableData.addContent(newContent);
+    return TableData.getLatestContent();
   }
 
   static getAllCpuInfo() {
@@ -619,7 +619,7 @@ class Controller {
 
   static validate(selectEles) {
     for (const ele of selectEles) {
-      if (ele.value === "Choose...") return false;
+      if (ele.value === config.formText) return false;
     }
     return true;
   }
